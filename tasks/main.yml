@@ -1,0 +1,46 @@
+- fail:
+    msg: variable "user" is not set
+  when: user is not defined
+
+- fail:
+    msg: variable "repo" is not set
+  when: repo is not defined
+
+- name: ensure host is known
+  lineinfile:
+    dest: "/home/{{ user }}/.ssh/known_hosts"
+    create: yes
+    state: present
+    line: "{{ lookup('pipe', 'ssh-keyscan -t rsa {{ item }}') }}"
+    regexp: "{{ item }}"
+  with_items: "{{ pass_known_hosts }}"
+
+- name: copy temporary deployment key
+  copy:
+    src: "{{ pass_deployment_key_src }}"
+    dest: "{{ pass_deployment_key_dest }}"
+    owner: "{{ user }}"
+    group: "{{ user }}"
+    mode: '0400'
+
+- name: ensure repo is cloned
+  git:
+    repo: "{{ repo }}"
+    dest: "{{ pass_repo_location }}"
+    key_file: "{{ pass_deployment_key_dest }}"
+
+- name: remove deployment key
+  file:
+    path: "{{ pass_deployment_key_dest }}"
+    state: absent
+
+- name: remove hooks directory
+  file:
+    path: "{{ pass_repo_location }}/.git/hooks"
+    state: absent
+
+- name: add hooks to repo
+  file:
+    src: "{{ pass_repo_location }}/hooks"
+    dest: "{{ pass_repo_location }}/.git/hooks"
+    state: link

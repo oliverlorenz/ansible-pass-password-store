@@ -1,0 +1,5 @@
+---
+  pass_known_hosts: []
+  pass_deployment_key_src: ""
+  pass_deployment_key_dest: /home/{{ ansible_user }}/.ssh/id_rsa_pass_deployment
+  pass_repo_location: ~/.password-store
